@@ -1,0 +1,36 @@
+.video-card {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.video-card:hover { transform: scale(1.01); }
+.thumbnail {
+  width: 100%;
+  border-radius: 12px;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  background: #1e1e1e;
+}
+.video-details {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.6rem;
+}
+.channel-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #3b82f6;
+  flex-shrink: 0;
+}
+.video-meta { flex: 1; }
+.video-title {
+  font-weight: 500;
+  font-size: 0.95rem;
+  line-height: 1.3rem;
+  margin-bottom: 0.2rem;
+}
+.channel-name, .stats {
+  font-size: 0.75rem;
+  color: #aaa;
+}

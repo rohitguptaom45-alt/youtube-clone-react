@@ -1,0 +1,39 @@
+.shorts-section {
+  margin: 1rem 1.5rem;
+}
+.section-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.shorts-scroll {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+.shorts-scroll::-webkit-scrollbar { height: 6px; }
+.shorts-scroll::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 10px; }
+.short-card {
+  min-width: 180px;
+  cursor: pointer;
+}
+.short-thumb {
+  width: 100%;
+  aspect-ratio: 9/16;
+  border-radius: 12px;
+  object-fit: cover;
+  background: #1e1e1e;
+}
+.short-title {
+  font-size: 0.85rem;
+  margin-top: 0.3rem;
+  font-weight: 500;
+}
+.stats {
+  font-size: 0.75rem;
+  color: #aaa;
+}

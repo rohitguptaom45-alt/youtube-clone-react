@@ -1,0 +1,24 @@
+.chips-wrapper {
+  padding: 0.8rem 1.5rem;
+  overflow-x: auto;
+  white-space: nowrap;
+  border-bottom: 1px solid #272727;
+}
+.chips {
+  display: inline-flex;
+  gap: 0.8rem;
+}
+.chip {
+  background: #272727;
+  padding: 0.4rem 1rem;
+  border-radius: 30px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.chip.active {
+  background: #fff;
+  color: #000;
+}
+.chip:hover { background: #3f3f3f; }

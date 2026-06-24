@@ -1,0 +1,230 @@
+.history-container {
+  display: flex;
+  min-height: 100vh;
+}
+.main-wrapper {
+  flex: 1;
+  margin-left: 240px;
+  min-height: 100vh;
+}
+
+.history-header {
+  padding: 1.5rem 1.5rem 0;
+  border-bottom: 1px solid #272727;
+}
+.history-title-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+.history-title {
+  font-size: 2rem;
+  font-weight: 700;
+}
+.clear-all-btn {
+  background: #272727;
+  color: #f1f1f1;
+  border: none;
+  border-radius: 40px;
+  padding: 0.5rem 1.2rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.2s;
+}
+.clear-all-btn:hover {
+  background: #ff6b6b;
+  color: #0f0f0f;
+}
+
+.history-search-bar {
+  display: flex;
+  align-items: center;
+  background: #1a1a1a;
+  border: 1px solid #303030;
+  border-radius: 40px;
+  padding: 0.3rem 1rem;
+  margin-bottom: 1rem;
+  max-width: 500px;
+  transition: border-color 0.2s;
+}
+.history-search-bar:focus-within {
+  border-color: #3ea6ff;
+}
+.history-search-bar i {
+  color: #888;
+  margin-right: 0.8rem;
+}
+.history-search-bar input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 0.6rem 0;
+  color: #f1f1f1;
+  font-size: 0.95rem;
+  outline: none;
+}
+.clear-search-btn {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+}
+.clear-search-btn:hover {
+  color: #f1f1f1;
+}
+
+.history-filters {
+  display: flex;
+  gap: 0.5rem;
+  padding-bottom: 0.8rem;
+  overflow-x: auto;
+}
+.filter-btn {
+  background: #272727;
+  color: #aaa;
+  border: none;
+  border-radius: 30px;
+  padding: 0.3rem 1.2rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.filter-btn:hover {
+  background: #3a3a3a;
+  color: #f1f1f1;
+}
+.filter-btn.active {
+  background: #3ea6ff;
+  color: #0f0f0f;
+}
+
+.empty-history {
+  text-align: center;
+  padding: 5rem 1.5rem;
+  color: #888;
+}
+.empty-history i {
+  display: block;
+  margin-bottom: 1rem;
+}
+.empty-history h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #f1f1f1;
+}
+.empty-history p {
+  margin-bottom: 1.5rem;
+}
+.browse-btn {
+  background: #3ea6ff;
+  color: #0f0f0f;
+  border: none;
+  border-radius: 40px;
+  padding: 0.7rem 2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.browse-btn:hover {
+  background: #1c8bef;
+}
+
+.history-list {
+  padding: 1.5rem;
+}
+.history-group {
+  margin-bottom: 2rem;
+}
+.history-date-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #aaa;
+  margin-bottom: 0.8rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid #272727;
+}
+.history-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border: 1px solid transparent;
+}
+.history-item:hover {
+  background: #1a1a1a;
+  border-color: #272727;
+}
+.history-thumbnail {
+  width: 120px;
+  height: 68px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.history-item-info {
+  flex: 1;
+  min-width: 0;
+}
+.history-item-title {
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 0.2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.history-item-channel {
+  font-size: 0.8rem;
+  color: #aaa;
+}
+.history-item-time {
+  font-size: 0.75rem;
+  color: #666;
+  margin-left: 0.5rem;
+}
+.remove-history-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 0.3rem 0.6rem;
+  border-radius: 50%;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.remove-history-btn:hover {
+  background: #272727;
+  color: #ff6b6b;
+}
+
+@media (max-width: 768px) {
+  .main-wrapper { margin-left: 0; }
+  .history-title-section { flex-direction: column; align-items: flex-start; gap: 0.8rem; }
+  .history-thumbnail { width: 80px; height: 45px; }
+  .history-item { flex-wrap: wrap; }
+  .history-item-title { white-space: normal; }
+  .history-search-bar { max-width: 100%; }
+}
+
+@media (max-width: 500px) {
+  .history-header { padding: 1rem; }
+  .history-list { padding: 1rem; }
+  .history-thumbnail { width: 60px; height: 34px; }
+}
