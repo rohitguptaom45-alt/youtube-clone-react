@@ -18,6 +18,7 @@ function VideoPlayer() {
   const [newComment, setNewComment] = useState('');
   const [editingComment, setEditingComment] = useState(null);
   const [editContent, setEditContent] = useState('');
+  const [showMenu, setShowMenu] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
@@ -25,6 +26,7 @@ function VideoPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [commentCount, setCommentCount] = useState(0);
 
   useEffect(() => {
     const userData = Auth.getUser();
@@ -38,27 +40,16 @@ function VideoPlayer() {
   const fetchVideoData = async () => {
     try {
       setLoading(true);
-      const mockVideo = {
-        _id: videoId,
-        title: 'Sample Video Title',
-        description: 'This is a sample video description.',
-        videoFile: 'https://www.w3schools.com/html/mov_bbb.mp4',
-        thumbnail: 'https://picsum.photos/id/101/320/180',
-        views: 1234,
-        owner: {
-          _id: 'owner123',
-          fullName: 'Channel Name',
-          username: 'channelname',
-          avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-          subscribers: 5000
-        },
-        likes: [],
-        createdAt: new Date().toISOString()
-      };
-      setVideo(mockVideo);
-      setLikeCount(mockVideo.likes?.length || 0);
-      if (user && mockVideo.likes) {
-        setIsLiked(mockVideo.likes.includes(user._id));
+      const response = await API.getVideoById(videoId);
+      if (response?.success && response?.data) {
+        setVideo(response.data);
+        const likes = response.data.likes || [];
+        setLikeCount(likes.length);
+        if (user && likes.includes(user._id)) {
+          setIsLiked(true);
+        } else {
+          setIsLiked(false);
+        }
       }
     } catch (error) {
       console.error('Error fetching video:', error);
@@ -70,12 +61,14 @@ function VideoPlayer() {
   const fetchComments = async () => {
     try {
       const response = await API.getVideoComments(videoId);
-      if (response.success) {
+      if (response?.success) {
         setComments(response.data || []);
+        setCommentCount(response.data?.length || 0);
       }
     } catch (error) {
       console.error('Error fetching comments:', error);
       setComments([]);
+      setCommentCount(0);
     }
   };
 
@@ -87,14 +80,14 @@ function VideoPlayer() {
 
     try {
       const response = await API.addComment(videoId, newComment.trim());
-      if (response.success) {
+      if (response?.success) {
         setNewComment('');
         await fetchComments();
       } else {
-        alert(response.message || 'Failed to add comment');
+        alert(response?.message || 'Failed to add comment');
       }
     } catch (error) {
-      alert(error.message || 'Failed to add comment');
+      alert(error?.message || 'Failed to add comment');
     }
   };
 
@@ -106,15 +99,16 @@ function VideoPlayer() {
 
     try {
       const response = await API.updateComment(commentId, editContent.trim());
-      if (response.success) {
+      if (response?.success) {
         setEditingComment(null);
         setEditContent('');
+        setShowMenu(null);
         await fetchComments();
       } else {
-        alert(response.message || 'Failed to update comment');
+        alert(response?.message || 'Failed to update comment');
       }
     } catch (error) {
-      alert(error.message || 'Failed to update comment');
+      alert(error?.message || 'Failed to update comment');
     }
   };
 
@@ -123,46 +117,51 @@ function VideoPlayer() {
 
     try {
       const response = await API.deleteComment(commentId);
-      if (response.success) {
+      if (response?.success) {
+        setShowMenu(null);
         await fetchComments();
       } else {
-        alert(response.message || 'Failed to delete comment');
+        alert(response?.message || 'Failed to delete comment');
       }
     } catch (error) {
-      alert(error.message || 'Failed to delete comment');
+      alert(error?.message || 'Failed to delete comment');
     }
   };
 
-  const handleToggleLike = async () => {
+  const handleToggleLike = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     try {
       const response = await API.toggleVideoLike(videoId);
-      if (response.success) {
-        setIsLiked(!isLiked);
-        setLikeCount(isLiked ? likeCount - 1 : likeCount + 1);
+      if (response?.success) {
+        const newLikedState = !isLiked;
+        setIsLiked(newLikedState);
+        setLikeCount(newLikedState ? likeCount + 1 : likeCount - 1);
       } else {
-        alert(response.message || 'Failed to toggle like');
+        alert(response?.message || 'Failed to toggle like');
       }
     } catch (error) {
-      alert(error.message || 'Failed to toggle like');
+      console.error('Like error:', error);
+      alert(error?.message || 'Failed to toggle like');
     }
   };
 
   const handleToggleCommentLike = async (commentId) => {
     try {
       const response = await API.toggleCommentLike(commentId);
-      if (response.success) {
+      if (response?.success) {
         await fetchComments();
       } else {
-        alert(response.message || 'Failed to like comment');
+        alert(response?.message || 'Failed to like comment');
       }
     } catch (error) {
-      alert(error.message || 'Failed to like comment');
+      alert(error?.message || 'Failed to like comment');
     }
   };
 
   const handleSubscribe = () => {
     setIsSubscribed(!isSubscribed);
-    alert(isSubscribed ? '❌ Unsubscribed from channel' : '✅ Subscribed to channel!');
   };
 
   const handlePlayPause = () => {
@@ -203,6 +202,30 @@ function VideoPlayer() {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatViews = (views) => {
+    if (views >= 1000000) return (views / 1000000).toFixed(1) + 'M';
+    if (views >= 1000) return (views / 1000).toFixed(1) + 'K';
+    return views?.toString() || '0';
+  };
+
+  const getTimeAgo = (dateStr) => {
+    const now = new Date();
+    const diff = now - new Date(dateStr);
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    const months = Math.floor(days / 30);
+    const years = Math.floor(days / 365);
+
+    if (years > 0) return `${years} year${years > 1 ? 's' : ''} ago`;
+    if (months > 0) return `${months} month${months > 1 ? 's' : ''} ago`;
+    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    return `${seconds} second${seconds > 1 ? 's' : ''} ago`;
   };
 
   const toggleSidebar = () => {
@@ -258,6 +281,8 @@ function VideoPlayer() {
                 onLoadedMetadata={handleLoadedMetadata}
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
+                controls
+                preload="metadata"
               />
               <div className="video-controls">
                 <div className="video-progress-bar" onClick={handleSeek}>
@@ -283,22 +308,26 @@ function VideoPlayer() {
             <div className="video-info-section">
               <h1 className="video-title">{video.title}</h1>
               <div className="video-meta">
-                <div className="video-owner" onClick={() => navigate(`/channel/${video.owner?._id}`)}>
+                <div className="video-owner">
                   <img className="video-owner-avatar" src={video.owner?.avatar} alt={video.owner?.fullName} />
                   <div className="video-owner-info">
                     <span className="video-owner-name">{video.owner?.fullName}</span>
                     <span className="video-owner-subs">{video.owner?.subscribers?.toLocaleString()} subscribers</span>
                   </div>
-                </div>
-                <div className="video-actions">
                   <button className={`subscribe-btn ${isSubscribed ? 'subscribed' : ''}`} onClick={handleSubscribe}>
                     {isSubscribed ? 'Subscribed' : 'Subscribe'}
                   </button>
-                  <button className={`like-btn ${isLiked ? 'liked' : ''}`} onClick={handleToggleLike}>
+                </div>
+                <div className="video-stats">
+                  <button 
+                    className={`like-btn ${isLiked ? 'liked' : ''}`} 
+                    onClick={handleToggleLike}
+                    type="button"
+                  >
                     <i className={`fas fa-heart ${isLiked ? 'liked' : ''}`}></i>
                     <span>{likeCount}</span>
                   </button>
-                  <span className="video-views">{video.views} views</span>
+                  <span className="video-views">{formatViews(video.views)} views</span>
                   <span className="video-date">
                     {new Date(video.createdAt).toLocaleDateString()}
                   </span>
@@ -308,9 +337,11 @@ function VideoPlayer() {
             </div>
 
             <div className="comments-section">
-              <h3 className="comments-title">
-                <i className="fas fa-comments"></i> Comments ({comments.length})
-              </h3>
+              <div className="comments-header">
+                <h3 className="comments-title">
+                  <i className="fas fa-comments"></i> Comments ({commentCount})
+                </h3>
+              </div>
 
               {user ? (
                 <div className="comment-input-wrapper">
@@ -342,9 +373,34 @@ function VideoPlayer() {
                       <div className="comment-content">
                         <div className="comment-header">
                           <span className="comment-owner">{comment.owner?.fullName}</span>
-                          <span className="comment-time">
-                            {new Date(comment.createdAt).toLocaleDateString()}
-                          </span>
+                          <span className="comment-time">{getTimeAgo(comment.createdAt)}</span>
+                          {comment.updatedAt !== comment.createdAt && (
+                            <span className="comment-edited">(edited)</span>
+                          )}
+                          {user && user._id === comment.owner?._id && (
+                            <div className="comment-menu">
+                              <button 
+                                className="comment-menu-btn"
+                                onClick={() => setShowMenu(showMenu === comment._id ? null : comment._id)}
+                              >
+                                <i className="fas fa-ellipsis-v"></i>
+                              </button>
+                              {showMenu === comment._id && (
+                                <div className="comment-menu-dropdown">
+                                  <button onClick={() => {
+                                    setEditingComment(comment._id);
+                                    setEditContent(comment.content);
+                                    setShowMenu(null);
+                                  }}>
+                                    <i className="fas fa-edit"></i> Edit
+                                  </button>
+                                  <button onClick={() => handleDeleteComment(comment._id)}>
+                                    <i className="fas fa-trash"></i> Delete
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                         {editingComment === comment._id ? (
                           <div className="comment-edit-wrapper">
@@ -355,7 +411,11 @@ function VideoPlayer() {
                               rows="2"
                             />
                             <div className="comment-edit-actions">
-                              <button className="comment-edit-cancel" onClick={() => setEditingComment(null)}>
+                              <button className="comment-edit-cancel" onClick={() => {
+                                setEditingComment(null);
+                                setEditContent('');
+                                setShowMenu(null);
+                              }}>
                                 Cancel
                               </button>
                               <button className="comment-edit-save" onClick={() => handleUpdateComment(comment._id)}>
@@ -368,25 +428,15 @@ function VideoPlayer() {
                         )}
                         <div className="comment-actions">
                           <button 
-                            className="comment-like-btn"
+                            className={`comment-like-btn ${(comment.likes || []).includes(user?._id) ? 'liked' : ''}`}
                             onClick={() => handleToggleCommentLike(comment._id)}
                           >
                             <i className="fas fa-heart"></i>
-                            <span>{comment.likes?.length || 0}</span>
+                            <span>{(comment.likes || []).length}</span>
                           </button>
-                          {user && user._id === comment.owner?._id && !editingComment && (
-                            <>
-                              <button className="comment-edit-btn" onClick={() => {
-                                setEditingComment(comment._id);
-                                setEditContent(comment.content);
-                              }}>
-                                <i className="fas fa-edit"></i> Edit
-                              </button>
-                              <button className="comment-delete-btn" onClick={() => handleDeleteComment(comment._id)}>
-                                <i className="fas fa-trash"></i> Delete
-                              </button>
-                            </>
-                          )}
+                          <button className="comment-reply-btn">
+                            <i className="fas fa-reply"></i> Reply
+                          </button>
                         </div>
                       </div>
                     </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
+import API from '../api';
 import { Auth } from '../auth';
 import '../styles/Talk.css';
 
@@ -14,6 +15,7 @@ function Talk() {
   const [replyTo, setReplyTo] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [loading, setLoading] = useState(true);
   const [showNewTweetModal, setShowNewTweetModal] = useState(false);
 
   useEffect(() => {
@@ -21,92 +23,159 @@ function Talk() {
     if (userData) {
       setUser(userData);
     }
-    loadTweets();
+    fetchTweets();
   }, []);
 
-  const loadTweets = () => {
-    const savedTweets = JSON.parse(localStorage.getItem('tweets') || '[]');
-    setTweets(savedTweets.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+  const fetchTweets = async () => {
+    try {
+      setLoading(true);
+      const response = await API.getTweets();
+      if (response?.success && response?.data) {
+        setTweets(response.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+      } else {
+        const savedTweets = JSON.parse(localStorage.getItem('tweets') || '[]');
+        setTweets(savedTweets.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+      }
+    } catch (error) {
+      console.error('Error fetching tweets:', error);
+      const savedTweets = JSON.parse(localStorage.getItem('tweets') || '[]');
+      setTweets(savedTweets.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleTweet = () => {
+  const handleTweet = async () => {
     if (!newTweet.trim()) {
       alert('Please write something to tweet!');
       return;
     }
 
-    const tweetData = {
-      id: 'tweet_' + Date.now(),
-      userId: user._id,
-      username: user.username,
-      fullName: user.fullName,
-      avatar: user.avatar || 'https://randomuser.me/api/portraits/men/32.jpg',
-      content: newTweet.trim(),
-      likes: [],
-      replies: [],
-      createdAt: new Date().toISOString(),
-      parentId: replyTo || null
-    };
+    try {
+      const tweetData = {
+        content: newTweet.trim(),
+        parentId: replyTo || null
+      };
 
-    const updatedTweets = [tweetData, ...tweets];
-    setTweets(updatedTweets);
-    localStorage.setItem('tweets', JSON.stringify(updatedTweets));
-    setNewTweet('');
-    setReplyTo(null);
-    setShowNewTweetModal(false);
-    loadTweets();
+      const response = await API.createTweet(tweetData);
+      if (response?.success) {
+        setNewTweet('');
+        setReplyTo(null);
+        setShowNewTweetModal(false);
+        await fetchTweets();
+        alert('✅ Tweet posted successfully!');
+      } else {
+        const newTweetObj = {
+          id: 'tweet_' + Date.now(),
+          userId: user?._id || 'unknown',
+          username: user?.username || 'user',
+          fullName: user?.fullName || 'User',
+          avatar: user?.avatar || 'https://randomuser.me/api/portraits/men/32.jpg',
+          content: newTweet.trim(),
+          likes: [],
+          replies: [],
+          createdAt: new Date().toISOString(),
+          parentId: replyTo || null
+        };
+        const updatedTweets = [newTweetObj, ...tweets];
+        setTweets(updatedTweets);
+        localStorage.setItem('tweets', JSON.stringify(updatedTweets));
+        setNewTweet('');
+        setReplyTo(null);
+        setShowNewTweetModal(false);
+        alert('✅ Tweet posted (local storage)!');
+      }
+    } catch (error) {
+      console.error('Tweet error:', error);
+      alert(error?.message || 'Failed to post tweet');
+    }
   };
 
-  const handleReply = (tweetId) => {
+  const handleReply = async (tweetId) => {
     if (!replyText.trim()) {
       alert('Please write a reply!');
       return;
     }
 
-    const replyData = {
-      id: 'reply_' + Date.now(),
-      userId: user._id,
-      username: user.username,
-      fullName: user.fullName,
-      avatar: user.avatar || 'https://randomuser.me/api/portraits/men/32.jpg',
-      content: replyText.trim(),
-      likes: [],
-      replies: [],
-      createdAt: new Date().toISOString(),
-      parentId: tweetId
-    };
+    try {
+      const replyData = {
+        content: replyText.trim(),
+        parentId: tweetId
+      };
 
-    const updatedTweets = [replyData, ...tweets];
-    setTweets(updatedTweets);
-    localStorage.setItem('tweets', JSON.stringify(updatedTweets));
-    setReplyText('');
-    setReplyTo(null);
-    loadTweets();
-  };
-
-  const handleLike = (tweetId) => {
-    const updatedTweets = tweets.map(tweet => {
-      if (tweet.id === tweetId) {
-        const likeIndex = tweet.likes.indexOf(user._id);
-        if (likeIndex > -1) {
-          tweet.likes.splice(likeIndex, 1);
-        } else {
-          tweet.likes.push(user._id);
-        }
+      const response = await API.createTweet(replyData);
+      if (response?.success) {
+        setReplyText('');
+        setReplyTo(null);
+        await fetchTweets();
+        alert('✅ Reply posted successfully!');
+      } else {
+        const newReply = {
+          id: 'reply_' + Date.now(),
+          userId: user?._id || 'unknown',
+          username: user?.username || 'user',
+          fullName: user?.fullName || 'User',
+          avatar: user?.avatar || 'https://randomuser.me/api/portraits/men/32.jpg',
+          content: replyText.trim(),
+          likes: [],
+          replies: [],
+          createdAt: new Date().toISOString(),
+          parentId: tweetId
+        };
+        const updatedTweets = [newReply, ...tweets];
+        setTweets(updatedTweets);
+        localStorage.setItem('tweets', JSON.stringify(updatedTweets));
+        setReplyText('');
+        setReplyTo(null);
+        alert('✅ Reply posted (local storage)!');
       }
-      return tweet;
-    });
-    setTweets(updatedTweets);
-    localStorage.setItem('tweets', JSON.stringify(updatedTweets));
-    loadTweets();
+    } catch (error) {
+      console.error('Reply error:', error);
+      alert(error?.message || 'Failed to post reply');
+    }
   };
 
-  const handleDelete = (tweetId) => {
-    if (window.confirm('Are you sure you want to delete this tweet?')) {
-      const updatedTweets = tweets.filter(tweet => tweet.id !== tweetId);
-      setTweets(updatedTweets);
-      localStorage.setItem('tweets', JSON.stringify(updatedTweets));
-      loadTweets();
+  const handleLike = async (tweetId) => {
+    try {
+      const response = await API.likeTweet(tweetId);
+      if (response?.success) {
+        await fetchTweets();
+      } else {
+        const updatedTweets = tweets.map(tweet => {
+          if (tweet.id === tweetId) {
+            const likeIndex = tweet.likes.indexOf(user?._id);
+            if (likeIndex > -1) {
+              tweet.likes.splice(likeIndex, 1);
+            } else {
+              tweet.likes.push(user?._id);
+            }
+          }
+          return tweet;
+        });
+        setTweets(updatedTweets);
+        localStorage.setItem('tweets', JSON.stringify(updatedTweets));
+      }
+    } catch (error) {
+      console.error('Like error:', error);
+    }
+  };
+
+  const handleDelete = async (tweetId) => {
+    if (!window.confirm('Are you sure you want to delete this tweet?')) return;
+
+    try {
+      const response = await API.deleteTweet(tweetId);
+      if (response?.success) {
+        await fetchTweets();
+        alert('🗑️ Tweet deleted!');
+      } else {
+        const updatedTweets = tweets.filter(tweet => tweet.id !== tweetId);
+        setTweets(updatedTweets);
+        localStorage.setItem('tweets', JSON.stringify(updatedTweets));
+        alert('🗑️ Tweet deleted (local storage)!');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
     }
   };
 
@@ -136,11 +205,26 @@ function Talk() {
     if (activeTab === 'all') {
       return tweets.filter(t => !t.parentId);
     }
+    if (activeTab === 'mine') {
+      return tweets.filter(t => !t.parentId && t.userId === user?._id);
+    }
     if (activeTab === 'following') {
       return tweets.filter(t => !t.parentId && t.userId !== user?._id);
     }
     return tweets.filter(t => !t.parentId);
   };
+
+  if (loading) {
+    return (
+      <div className="talk-container">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <div className="main-wrapper">
+          <Navbar user={user} onMenuClick={toggleSidebar} searchQuery="" onSearchChange={() => {}} onSearchSubmit={() => {}} />
+          <div className="loading-state">Loading tweets...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="talk-container">
@@ -194,7 +278,7 @@ function Talk() {
             </div>
           ) : (
             filteredTweets().map(tweet => (
-              <div key={tweet.id} className="tweet-card">
+              <div key={tweet.id || tweet._id} className="tweet-card">
                 <div className="tweet-header">
                   <img className="tweet-avatar" src={tweet.avatar} alt={tweet.username} />
                   <div className="tweet-user-info">
@@ -203,7 +287,7 @@ function Talk() {
                     <span className="tweet-time">· {getTimeAgo(tweet.createdAt)}</span>
                   </div>
                   {tweet.userId === user?._id && (
-                    <button className="tweet-delete" onClick={() => handleDelete(tweet.id)}>
+                    <button className="tweet-delete" onClick={() => handleDelete(tweet.id || tweet._id)}>
                       <i className="fas fa-trash"></i>
                     </button>
                   )}
@@ -214,21 +298,21 @@ function Talk() {
                 <div className="tweet-actions">
                   <button 
                     className="tweet-action-btn like-btn"
-                    onClick={() => handleLike(tweet.id)}
+                    onClick={() => handleLike(tweet.id || tweet._id)}
                   >
-                    <i className={`fas fa-heart ${tweet.likes.includes(user?._id) ? 'liked' : ''}`}></i>
-                    <span>{tweet.likes.length}</span>
+                    <i className={`fas fa-heart ${(tweet.likes || []).includes(user?._id) ? 'liked' : ''}`}></i>
+                    <span>{(tweet.likes || []).length}</span>
                   </button>
                   <button 
                     className="tweet-action-btn reply-btn"
-                    onClick={() => setReplyTo(replyTo === tweet.id ? null : tweet.id)}
+                    onClick={() => setReplyTo(replyTo === (tweet.id || tweet._id) ? null : (tweet.id || tweet._id))}
                   >
                     <i className="fas fa-reply"></i>
-                    <span>{getReplies(tweet.id).length}</span>
+                    <span>{getReplies(tweet.id || tweet._id).length}</span>
                   </button>
                 </div>
 
-                {replyTo === tweet.id && (
+                {replyTo === (tweet.id || tweet._id) && (
                   <div className="tweet-reply-box">
                     <textarea
                       className="reply-input"
@@ -238,17 +322,17 @@ function Talk() {
                     />
                     <div className="reply-actions">
                       <button className="reply-cancel" onClick={() => setReplyTo(null)}>Cancel</button>
-                      <button className="reply-send" onClick={() => handleReply(tweet.id)}>
+                      <button className="reply-send" onClick={() => handleReply(tweet.id || tweet._id)}>
                         <i className="fas fa-paper-plane"></i> Reply
                       </button>
                     </div>
                   </div>
                 )}
 
-                {getReplies(tweet.id).length > 0 && (
+                {getReplies(tweet.id || tweet._id).length > 0 && (
                   <div className="tweet-replies">
-                    {getReplies(tweet.id).map(reply => (
-                      <div key={reply.id} className="tweet-reply">
+                    {getReplies(tweet.id || tweet._id).map(reply => (
+                      <div key={reply.id || reply._id} className="tweet-reply">
                         <div className="tweet-reply-header">
                           <img className="tweet-reply-avatar" src={reply.avatar} alt={reply.username} />
                           <div className="tweet-reply-user-info">
@@ -257,7 +341,7 @@ function Talk() {
                             <span className="tweet-reply-time">· {getTimeAgo(reply.createdAt)}</span>
                           </div>
                           {reply.userId === user?._id && (
-                            <button className="tweet-reply-delete" onClick={() => handleDelete(reply.id)}>
+                            <button className="tweet-reply-delete" onClick={() => handleDelete(reply.id || reply._id)}>
                               <i className="fas fa-times"></i>
                             </button>
                           )}
@@ -268,10 +352,10 @@ function Talk() {
                         <div className="tweet-reply-actions">
                           <button 
                             className="tweet-action-btn like-btn"
-                            onClick={() => handleLike(reply.id)}
+                            onClick={() => handleLike(reply.id || reply._id)}
                           >
-                            <i className={`fas fa-heart ${reply.likes.includes(user?._id) ? 'liked' : ''}`}></i>
-                            <span>{reply.likes.length}</span>
+                            <i className={`fas fa-heart ${(reply.likes || []).includes(user?._id) ? 'liked' : ''}`}></i>
+                            <span>{(reply.likes || []).length}</span>
                           </button>
                         </div>
                       </div>
@@ -286,7 +370,6 @@ function Talk() {
         <footer>YouTube Clone · Talk/Tweet</footer>
       </div>
 
-      {/* New Tweet Modal */}
       {showNewTweetModal && (
         <div className="modal-overlay" onClick={() => setShowNewTweetModal(false)}>
           <div className="modal-content tweet-modal" onClick={(e) => e.stopPropagation()}>
@@ -314,7 +397,7 @@ function Talk() {
               <div className="tweet-modal-footer">
                 <span className="tweet-char-count">{newTweet.length}/280</span>
                 <button className="tweet-modal-submit" onClick={handleTweet}>
-                  <i className="fas fa-feather-alt"></i> 
+                  <i className="fas fa-feather-alt"></i> Tweet
                 </button>
               </div>
             </div>
