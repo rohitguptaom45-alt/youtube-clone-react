@@ -14,11 +14,6 @@ function VideoPlayer() {
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [video, setVideo] = useState(null);
-  const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState('');
-  const [editingComment, setEditingComment] = useState(null);
-  const [editContent, setEditContent] = useState('');
-  const [showMenu, setShowMenu] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
@@ -26,7 +21,6 @@ function VideoPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [commentCount, setCommentCount] = useState(0);
 
   useEffect(() => {
     const userData = Auth.getUser();
@@ -34,7 +28,6 @@ function VideoPlayer() {
       setUser(userData);
     }
     fetchVideoData();
-    fetchComments();
   }, [videoId]);
 
   const fetchVideoData = async () => {
@@ -43,6 +36,7 @@ function VideoPlayer() {
       const response = await API.getVideoById(videoId);
       if (response?.success && response?.data) {
         setVideo(response.data);
+        console.log("Fetched video:", response.data);
         const likes = response.data.likes || [];
         setLikeCount(likes.length);
         if (user && likes.includes(user._id)) {
@@ -55,76 +49,6 @@ function VideoPlayer() {
       console.error('Error fetching video:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchComments = async () => {
-    try {
-      const response = await API.getVideoComments(videoId);
-      if (response?.success) {
-        setComments(response.data || []);
-        setCommentCount(response.data?.length || 0);
-      }
-    } catch (error) {
-      console.error('Error fetching comments:', error);
-      setComments([]);
-      setCommentCount(0);
-    }
-  };
-
-  const handleAddComment = async () => {
-    if (!newComment.trim()) {
-      alert('Please write a comment!');
-      return;
-    }
-
-    try {
-      const response = await API.addComment(videoId, newComment.trim());
-      if (response?.success) {
-        setNewComment('');
-        await fetchComments();
-      } else {
-        alert(response?.message || 'Failed to add comment');
-      }
-    } catch (error) {
-      alert(error?.message || 'Failed to add comment');
-    }
-  };
-
-  const handleUpdateComment = async (commentId) => {
-    if (!editContent.trim()) {
-      alert('Please write something!');
-      return;
-    }
-
-    try {
-      const response = await API.updateComment(commentId, editContent.trim());
-      if (response?.success) {
-        setEditingComment(null);
-        setEditContent('');
-        setShowMenu(null);
-        await fetchComments();
-      } else {
-        alert(response?.message || 'Failed to update comment');
-      }
-    } catch (error) {
-      alert(error?.message || 'Failed to update comment');
-    }
-  };
-
-  const handleDeleteComment = async (commentId) => {
-    if (!window.confirm('Are you sure you want to delete this comment?')) return;
-
-    try {
-      const response = await API.deleteComment(commentId);
-      if (response?.success) {
-        setShowMenu(null);
-        await fetchComments();
-      } else {
-        alert(response?.message || 'Failed to delete comment');
-      }
-    } catch (error) {
-      alert(error?.message || 'Failed to delete comment');
     }
   };
 
@@ -144,19 +68,6 @@ function VideoPlayer() {
     } catch (error) {
       console.error('Like error:', error);
       alert(error?.message || 'Failed to toggle like');
-    }
-  };
-
-  const handleToggleCommentLike = async (commentId) => {
-    try {
-      const response = await API.toggleCommentLike(commentId);
-      if (response?.success) {
-        await fetchComments();
-      } else {
-        alert(response?.message || 'Failed to like comment');
-      }
-    } catch (error) {
-      alert(error?.message || 'Failed to like comment');
     }
   };
 
@@ -208,24 +119,6 @@ function VideoPlayer() {
     if (views >= 1000000) return (views / 1000000).toFixed(1) + 'M';
     if (views >= 1000) return (views / 1000).toFixed(1) + 'K';
     return views?.toString() || '0';
-  };
-
-  const getTimeAgo = (dateStr) => {
-    const now = new Date();
-    const diff = now - new Date(dateStr);
-    const seconds = Math.floor(diff / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-    const months = Math.floor(days / 30);
-    const years = Math.floor(days / 365);
-
-    if (years > 0) return `${years} year${years > 1 ? 's' : ''} ago`;
-    if (months > 0) return `${months} month${months > 1 ? 's' : ''} ago`;
-    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
-    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-    if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-    return `${seconds} second${seconds > 1 ? 's' : ''} ago`;
   };
 
   const toggleSidebar = () => {
@@ -334,115 +227,6 @@ function VideoPlayer() {
                 </div>
               </div>
               <p className="video-description">{video.description}</p>
-            </div>
-
-            <div className="comments-section">
-              <div className="comments-header">
-                <h3 className="comments-title">
-                  <i className="fas fa-comments"></i> Comments ({commentCount})
-                </h3>
-              </div>
-
-              {user ? (
-                <div className="comment-input-wrapper">
-                  <img className="comment-user-avatar" src={user.avatar} alt={user.fullName} />
-                  <textarea
-                    className="comment-input"
-                    placeholder="Write a comment..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    rows="2"
-                  />
-                  <button className="comment-submit" onClick={handleAddComment}>
-                    <i className="fas fa-paper-plane"></i> Post
-                  </button>
-                </div>
-              ) : (
-                <p className="comment-login-prompt">
-                  <a href="/signin">Sign in</a> to comment
-                </p>
-              )}
-
-              <div className="comments-list">
-                {comments.length === 0 ? (
-                  <p className="no-comments">No comments yet. Be the first to comment!</p>
-                ) : (
-                  comments.map(comment => (
-                    <div key={comment._id} className="comment-item">
-                      <img className="comment-avatar" src={comment.owner?.avatar} alt={comment.owner?.fullName} />
-                      <div className="comment-content">
-                        <div className="comment-header">
-                          <span className="comment-owner">{comment.owner?.fullName}</span>
-                          <span className="comment-time">{getTimeAgo(comment.createdAt)}</span>
-                          {comment.updatedAt !== comment.createdAt && (
-                            <span className="comment-edited">(edited)</span>
-                          )}
-                          {user && user._id === comment.owner?._id && (
-                            <div className="comment-menu">
-                              <button 
-                                className="comment-menu-btn"
-                                onClick={() => setShowMenu(showMenu === comment._id ? null : comment._id)}
-                              >
-                                <i className="fas fa-ellipsis-v"></i>
-                              </button>
-                              {showMenu === comment._id && (
-                                <div className="comment-menu-dropdown">
-                                  <button onClick={() => {
-                                    setEditingComment(comment._id);
-                                    setEditContent(comment.content);
-                                    setShowMenu(null);
-                                  }}>
-                                    <i className="fas fa-edit"></i> Edit
-                                  </button>
-                                  <button onClick={() => handleDeleteComment(comment._id)}>
-                                    <i className="fas fa-trash"></i> Delete
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        {editingComment === comment._id ? (
-                          <div className="comment-edit-wrapper">
-                            <textarea
-                              className="comment-edit-input"
-                              value={editContent}
-                              onChange={(e) => setEditContent(e.target.value)}
-                              rows="2"
-                            />
-                            <div className="comment-edit-actions">
-                              <button className="comment-edit-cancel" onClick={() => {
-                                setEditingComment(null);
-                                setEditContent('');
-                                setShowMenu(null);
-                              }}>
-                                Cancel
-                              </button>
-                              <button className="comment-edit-save" onClick={() => handleUpdateComment(comment._id)}>
-                                Save
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="comment-text">{comment.content}</p>
-                        )}
-                        <div className="comment-actions">
-                          <button 
-                            className={`comment-like-btn ${(comment.likes || []).includes(user?._id) ? 'liked' : ''}`}
-                            onClick={() => handleToggleCommentLike(comment._id)}
-                          >
-                            <i className="fas fa-heart"></i>
-                            <span>{(comment.likes || []).length}</span>
-                          </button>
-                          <button className="comment-reply-btn">
-                            <i className="fas fa-reply"></i> Reply
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
             </div>
           </div>
         </div>
