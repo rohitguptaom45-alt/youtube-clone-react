@@ -14,6 +14,8 @@ function VideoPlayer() {
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [video, setVideo] = useState(null);
+
+
   const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
@@ -34,8 +36,10 @@ function VideoPlayer() {
     try {
       setLoading(true);
       const response = await API.getVideoById(videoId);
+      console.log("Fetched video response:", response);
       if (response?.success && response?.data) {
         setVideo(response.data);
+        // console.log("videos bu setvideo",video)
         console.log("Fetched video:", response.data);
         const likes = response.data.likes || [];
         setLikeCount(likes.length);
@@ -150,7 +154,9 @@ function VideoPlayer() {
   }
 
   return (
+    
     <div className="video-player-container">
+      {console.log("video data in return",video)}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="main-wrapper">
         <Navbar 
@@ -167,8 +173,8 @@ function VideoPlayer() {
               <video
                 ref={videoRef}
                 className="video-player"
-                src={video.videoFile}
-                poster={video.thumbnail}
+                src={video[0].videoFile}
+                poster={video[0].thumbnail}
                 onClick={handlePlayPause}
                 onTimeUpdate={handleTimeUpdate}
                 onLoadedMetadata={handleLoadedMetadata}
@@ -199,13 +205,13 @@ function VideoPlayer() {
             </div>
 
             <div className="video-info-section">
-              <h1 className="video-title">{video.title}</h1>
+              <h1 className="video-title">{video[0].title}</h1>
               <div className="video-meta">
                 <div className="video-owner">
-                  <img className="video-owner-avatar" src={video.owner?.avatar} alt={video.owner?.fullName} />
+                  <img className="video-owner-avatar" src={video[0].owner?.avatar} alt={video[0].owner?.fullName} />
                   <div className="video-owner-info">
-                    <span className="video-owner-name">{video.owner?.fullName}</span>
-                    <span className="video-owner-subs">{video.owner?.subscribers?.toLocaleString()} subscribers</span>
+                    <span className="video-owner-name">{video[0].owner?.fullName}</span>
+                    <span className="video-owner-subs">{video[0].owner?.subscribers?.toLocaleString()} subscribers</span>
                   </div>
                   <button className={`subscribe-btn ${isSubscribed ? 'subscribed' : ''}`} onClick={handleSubscribe}>
                     {isSubscribed ? 'Subscribed' : 'Subscribe'}
@@ -220,13 +226,13 @@ function VideoPlayer() {
                     <i className={`fas fa-heart ${isLiked ? 'liked' : ''}`}></i>
                     <span>{likeCount}</span>
                   </button>
-                  <span className="video-views">{formatViews(video.views)} views</span>
+                  <span className="video-views">{formatViews(video[0].views)} views</span>
                   <span className="video-date">
-                    {new Date(video.createdAt).toLocaleDateString()}
+                    {new Date(video[0].createdAt).toLocaleDateString()}
                   </span>
                 </div>
               </div>
-              <p className="video-description">{video.description}</p>
+              <p className="video-description">{video[0].description}</p>
             </div>
           </div>
         </div>

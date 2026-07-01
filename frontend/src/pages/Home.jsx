@@ -30,11 +30,11 @@ function Home() {
   
 
   const fetchVideos = async () => {
-    console.log("useEffect called");
+    
     try {
       setLoading(true);
       const response = await API.getAllVideos(page, 5, 'views', 'asc', searchQuery);
-      console.log("Fetched videos:", response);
+      
       if (response?.success && response?.data?.video) {
         setVideos(response.data.video);
         
