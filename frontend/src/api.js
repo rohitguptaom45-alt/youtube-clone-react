@@ -1,5 +1,5 @@
 const API = {
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1',
 
   _getCookie(name) {
     const value = `; ${document.cookie}`;
@@ -155,7 +155,7 @@ const API = {
       const url = `${this.baseURL}${endpoint}`;
       const response = await fetch(url, options);
       const data = await response.json();
-     
+
       if (!response.ok) {
         if (response.status === 401 && requiresAuth) {
           try {
@@ -177,7 +177,7 @@ const API = {
         }
         throw data;
       }
-     
+
       return data;
     } catch (error) {
       console.error('API Error:', error);
@@ -186,7 +186,6 @@ const API = {
   },
 
   async getAllVideos(page = 1, limit = 5, sortBy = 'views', sortType = 'asc', query = '') {
- 
     try {
       let url = `/videos?page=${page}&limit=${limit}&sortBy=${sortBy}&sortType=${sortType}`;
       if (query) {
@@ -232,6 +231,71 @@ const API = {
         message: 'Like toggled (mock)'
       };
     }
+  },
+
+  // ---- Comment functions ----
+
+  async getVideoComments(videoId, page = 1, limit = 10) {
+    return await this._request(`/comments/${videoId}?page=${page}&limit=${limit}`, 'GET', null, false);
+  },
+
+  async addComment(videoId, content) {
+    return await this._request(`/comments/${videoId}`, 'POST', { content }, true);
+  },
+
+  async updateComment(commentId, content) {
+    return await this._request(`/comments/c/${commentId}`, 'PATCH', { content }, true);
+  },
+
+  async deleteComment(commentId) {
+    return await this._request(`/comments/c/${commentId}`, 'DELETE', null, true);
+  },
+
+  // ---- Subscription functions ----
+
+  async toggleSubscription(channelId) {
+    if (!channelId) throw { message: 'Channel ID is required' };
+    return await this._request(`/subscriptions/c/${channelId}`, 'POST', null, true);
+  },
+
+  async getChannelSubscribers(channelId) {
+    return await this._request(`/subscriptions/c/${channelId}`, 'GET', null, false);
+  },
+
+  async getSubscribedChannels(subscriberId) {
+    return await this._request(`/subscriptions/u/${subscriberId}`, 'GET', null, false);
+  },
+
+  // ---- Tweet functions ----
+  // Backend routes (tweet.routes.js) are all protected by varifyJWt,
+  // so every call here needs requiresAuth = true.
+
+  async getTweets() {
+    // GET /tweets  -> getAlltweets controller
+    return await this._request('/tweets', 'GET', null, true);
+  },
+
+  async getUserTweets(userId) {
+    // GET /tweets/user/:userId -> getUserTweets controller
+    return await this._request(`/tweets/user/${userId}`, 'GET', null, true);
+  },
+
+  async createTweet(tweetData) {
+    // POST /tweets -> createTweet controller (body: { content })
+    const content = typeof tweetData === 'string' ? tweetData : tweetData?.content;
+    return await this._request('/tweets', 'POST', { content }, true);
+  },
+
+  async updateTweet(tweetId, content) {
+    // PATCH /tweets/:tweetId -> updateTweet controller (body: { content })
+    if (!tweetId) throw { message: 'Tweet ID is required' };
+    return await this._request(`/tweets/${tweetId}`, 'PATCH', { content }, true);
+  },
+
+  async deleteTweet(tweetId) {
+    // DELETE /tweets/:tweetId -> deleteTweet controller
+    if (!tweetId) throw { message: 'Tweet ID is required' };
+    return await this._request(`/tweets/${tweetId}`, 'DELETE', null, true);
   },
 
   _getMockVideos() {

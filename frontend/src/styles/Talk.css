@@ -611,3 +611,85 @@
     padding: 0.6rem 0.8rem;
   }
 }
+
+/* ===== NEW: Edit tweet feature (added for backend-connected edit) ===== */
+
+.tweet-owner-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.tweet-edit-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+  transition: all 0.2s;
+  font-size: 0.85rem;
+}
+
+.tweet-edit-btn:hover {
+  background: #1a2a3e;
+  color: #3ea6ff;
+}
+
+.tweet-edit-box {
+  margin-bottom: 0.8rem;
+}
+
+.edit-input {
+  width: 100%;
+  background: #121212;
+  border: 1px solid #3ea6ff;
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  color: #f1f1f1;
+  font-size: 0.95rem;
+  resize: vertical;
+  min-height: 70px;
+  outline: none;
+  font-family: inherit;
+}
+
+.edit-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.edit-cancel {
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+.edit-cancel:hover {
+  color: #f1f1f1;
+}
+
+.edit-save {
+  background: #3ea6ff;
+  color: #0f0f0f;
+  border: none;
+  border-radius: 20px;
+  padding: 0.3rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: background 0.2s;
+  margin-left: 0.5rem;
+}
+
+.edit-save:hover {
+  background: #1c8bef;
+}

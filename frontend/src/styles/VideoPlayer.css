@@ -232,6 +232,135 @@
   font-size: 0.95rem;
 }
 
+/* ---- Comment Section ---- */
+
+.comments-section {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #303030;
+}
+
+.comments-heading {
+  font-size: 1.1rem;
+  margin-bottom: 16px;
+  color: #f1f1f1;
+}
+
+.comment-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.comment-form-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.comment-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #444;
+  color: #fff;
+  padding: 8px 4px;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.comment-input:focus {
+  border-bottom-color: #fff;
+}
+
+.comment-submit-btn {
+  background: #3ea6ff;
+  color: #0f0f0f;
+  border: none;
+  border-radius: 18px;
+  padding: 8px 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.comment-submit-btn:disabled {
+  background: #303030;
+  color: #717171;
+  cursor: not-allowed;
+}
+
+.comments-loading,
+.comments-empty {
+  color: #aaa;
+  font-size: 0.9rem;
+  padding: 12px 0;
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.comment-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.comment-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.comment-body {
+  flex: 1;
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.comment-author {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #f1f1f1;
+}
+
+.comment-date {
+  font-size: 0.75rem;
+  color: #aaa;
+}
+
+.comment-content {
+  font-size: 0.9rem;
+  color: #eee;
+  margin: 0;
+  word-break: break-word;
+}
+
+.comment-delete-btn {
+  background: transparent;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.comment-delete-btn:hover {
+  color: #ff4d4d;
+}
+
 @media (max-width: 768px) {
   .main-wrapper {
     margin-left: 0;
@@ -280,5 +409,16 @@
   .video-views,
   .video-date {
     font-size: 0.75rem;
+  }
+
+  .comment-form-avatar,
+  .comment-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .comment-submit-btn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
   }
 }
