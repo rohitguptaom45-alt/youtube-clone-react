@@ -30,6 +30,9 @@ function VideoPlayer() {
   const [commentsLoading, setCommentsLoading] = useState(true);
   const [postingComment, setPostingComment] = useState(false);
   const [totalComments, setTotalComments] = useState(0);
+  const [likedCommentIds, setLikedCommentIds] = useState(new Set());
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editCommentText, setEditCommentText] = useState('');
 
   useEffect(() => {
     const userData = Auth.getUser();
@@ -138,6 +141,64 @@ function VideoPlayer() {
     } catch (error) {
       console.error('Error deleting comment:', error);
       alert(error?.message || 'Failed to delete comment');
+    }
+  };
+
+  const handleToggleCommentLike = async (commentId) => {
+    if (!user) {
+      alert('Please sign in to like comments');
+      return;
+    }
+    try {
+      const response = await API.toggleCommentLike(commentId);
+      if (response?.success) {
+        setLikedCommentIds((prev) => {
+          const next = new Set(prev);
+          if (next.has(commentId)) {
+            next.delete(commentId);
+          } else {
+            next.add(commentId);
+          }
+          return next;
+        });
+      } else {
+        alert(response?.message || 'Failed to toggle comment like');
+      }
+    } catch (error) {
+      console.error('Comment like error:', error);
+      alert(error?.message || 'Failed to toggle comment like');
+    }
+  };
+
+  const startEditComment = (comment) => {
+    setEditingCommentId(comment._id);
+    setEditCommentText(comment.content);
+  };
+
+  const cancelEditComment = () => {
+    setEditingCommentId(null);
+    setEditCommentText('');
+  };
+
+  const handleUpdateComment = async (commentId) => {
+    if (!editCommentText.trim()) {
+      alert('Comment cannot be empty');
+      return;
+    }
+    try {
+      const response = await API.updateComment(commentId, editCommentText.trim());
+      if (response?.success && response?.data) {
+        setComments((prev) =>
+          prev.map((c) => (c._id === commentId ? { ...c, content: response.data.content } : c))
+        );
+        setEditingCommentId(null);
+        setEditCommentText('');
+      } else {
+        alert(response?.message || 'Failed to update comment');
+      }
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      alert(error?.message || 'Failed to update comment');
     }
   };
 
@@ -408,17 +469,64 @@ function VideoPlayer() {
                             </span>
                             <span className="comment-date">{formatCommentDate(comment.createdAt)}</span>
                           </div>
-                          <p className="comment-content">{comment.content}</p>
-                        </div>
-                        {isOwner && (
+
+                          {editingCommentId === comment._id ? (
+                            <div className="comment-edit-box">
+                              <input
+                                type="text"
+                                className="comment-edit-input"
+                                value={editCommentText}
+                                onChange={(e) => setEditCommentText(e.target.value)}
+                                autoFocus
+                              />
+                              <div className="comment-edit-actions">
+                                <button
+                                  type="button"
+                                  className="comment-edit-cancel"
+                                  onClick={cancelEditComment}
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="button"
+                                  className="comment-edit-save"
+                                  onClick={() => handleUpdateComment(comment._id)}
+                                >
+                                  Save
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="comment-content">{comment.content}</p>
+                          )}
+
                           <button
-                            className="comment-delete-btn"
-                            onClick={() => handleDeleteComment(comment._id)}
-                            title="Delete comment"
+                            className={`comment-like-btn ${likedCommentIds.has(comment._id) ? 'liked' : ''}`}
+                            onClick={() => handleToggleCommentLike(comment._id)}
                             type="button"
                           >
-                            <i className="fas fa-trash"></i>
+                            <i className={`fas fa-heart ${likedCommentIds.has(comment._id) ? 'liked' : ''}`}></i>
                           </button>
+                        </div>
+                        {isOwner && editingCommentId !== comment._id && (
+                          <div className="comment-owner-actions">
+                            <button
+                              className="comment-edit-btn"
+                              onClick={() => startEditComment(comment)}
+                              title="Edit comment"
+                              type="button"
+                            >
+                              <i className="fas fa-pen"></i>
+                            </button>
+                            <button
+                              className="comment-delete-btn"
+                              onClick={() => handleDeleteComment(comment._id)}
+                              title="Delete comment"
+                              type="button"
+                            >
+                              <i className="fas fa-trash"></i>
+                            </button>
+                          </div>
                         )}
                       </div>
                     );

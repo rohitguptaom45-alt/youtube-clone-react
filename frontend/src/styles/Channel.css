@@ -491,3 +491,67 @@ footer {
   .video-grid { grid-template-columns: 1fr; }
   .analytics-grid { grid-template-columns: 1fr; }
 }
+
+/* ===== NEW: Avatar/Banner file upload in Edit Channel modal (backend-connected) ===== */
+
+.modal-image-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.modal-avatar-preview {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #303030;
+}
+.modal-banner-preview {
+  width: 140px;
+  height: 55px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 2px solid #303030;
+}
+.modal-file-btn {
+  background: #272727;
+  color: #f1f1f1;
+  border: none;
+  border-radius: 30px;
+  padding: 0.5rem 1.2rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.2s;
+}
+.modal-file-btn:hover {
+  background: #3a3a3a;
+}
+
+.video-owner-actions {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  gap: 0.2rem;
+}
+.video-owner-actions .delete-video-btn {
+  position: static;
+}
+.edit-video-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+.edit-video-btn:hover {
+  background: #1a2a3e;
+  color: #3ea6ff;
+}

@@ -186,11 +186,15 @@
   gap: 0.5rem;
   transition: all 0.2s;
 }
+.settings-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 .save-btn {
   background: #3ea6ff;
   color: #0f0f0f;
 }
-.save-btn:hover {
+.save-btn:hover:not(:disabled) {
   background: #1c8bef;
 }
 .password-btn {
@@ -453,4 +457,56 @@ footer {
 @media (max-width: 500px) {
   .settings-sidebar-item { font-size: 0.8rem; padding: 0.5rem; }
   .settings-sidebar-item i { margin-right: 0.3rem; }
+}
+
+/* ===== NEW: Avatar / Cover upload UI (added for backend-connected upload) ===== */
+
+.settings-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+.settings-avatar-preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #303030;
+}
+.settings-cover-row {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+.settings-cover-preview {
+  width: 160px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 2px solid #303030;
+}
+.settings-avatar-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+.settings-file-btn {
+  background: #272727;
+  color: #f1f1f1;
+  border: none;
+  border-radius: 30px;
+  padding: 0.5rem 1.2rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.2s;
+}
+.settings-file-btn:hover {
+  background: #3a3a3a;
 }

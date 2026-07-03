@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
+import API from '../api';
 import { Auth } from '../auth';
 import '../styles/Settings.css';
 
@@ -34,6 +35,12 @@ function Settings() {
     confirm: ''
   });
 
+  // Avatar / Cover upload state (real backend upload)
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [coverFile, setCoverFile] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null);
+
   useEffect(() => {
     const userData = Auth.getUser();
     if (userData) {
@@ -50,27 +57,123 @@ function Settings() {
     if (savedSettings) {
       setSettings(savedSettings);
     }
+
+    // Refresh with fresh data from backend (fullName/email/avatar/coverImage may have changed elsewhere)
+    (async () => {
+      try {
+        const response = await API.getCurrentUser();
+        if (response?.success && response?.data) {
+          const freshUser = response.data;
+          setUser(prev => ({ ...prev, ...freshUser }));
+          setAccountData(prev => ({
+            ...prev,
+            fullName: freshUser.fullName || prev.fullName,
+            email: freshUser.email || prev.email,
+            username: freshUser.username || prev.username
+          }));
+        }
+      } catch (error) {
+        console.error('Get current user error:', error);
+      }
+    })();
   }, []);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
-  const handleSaveAccount = () => {
-    const updatedUser = {
-      ...user,
-      fullName: accountData.fullName,
-      email: accountData.email,
-      username: accountData.username,
-      bio: accountData.bio,
-      location: accountData.location
-    };
-    localStorage.setItem('user', JSON.stringify(updatedUser));
-    setUser(updatedUser);
-    alert('✅ Account settings saved successfully!');
+  const handleSaveAccount = async () => {
+    if (!accountData.fullName.trim() || !accountData.email.trim()) {
+      alert('Full Name and Email are required');
+      return;
+    }
+
+    try {
+      // Backend only supports updating fullName + email
+      const response = await API.updateAccountDetails(accountData.fullName.trim(), accountData.email.trim());
+      if (response?.success) {
+        const updatedUser = { ...user, ...response.data, username: accountData.username, bio: accountData.bio, location: accountData.location };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        setUser(updatedUser);
+        alert('✅ Account settings saved successfully!');
+      } else {
+        const updatedUser = {
+          ...user,
+          fullName: accountData.fullName,
+          email: accountData.email,
+          username: accountData.username,
+          bio: accountData.bio,
+          location: accountData.location
+        };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        setUser(updatedUser);
+        alert('✅ Account settings saved (local storage)!');
+      }
+    } catch (error) {
+      console.error('Update account error:', error);
+      alert(error?.message || 'Failed to update account');
+    }
   };
 
-  const handleChangePassword = () => {
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleCoverChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setCoverFile(file);
+      setCoverPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleUploadAvatar = async () => {
+    if (!avatarFile) {
+      alert('Please choose an image first');
+      return;
+    }
+    try {
+      const response = await API.updateUserAvatar(avatarFile);
+      if (response?.success) {
+        setUser(prev => ({ ...prev, avatar: response.data.avatar }));
+        setAvatarFile(null);
+        setAvatarPreview(null);
+        alert('✅ Avatar updated successfully!');
+      }
+    } catch (error) {
+      console.error('Avatar update error:', error);
+      alert(error?.message || 'Failed to update avatar');
+    }
+  };
+
+  const handleUploadCover = async () => {
+    if (!coverFile) {
+      alert('Please choose an image first');
+      return;
+    }
+    try {
+      const response = await API.updateUserCoverImage(coverFile);
+      if (response?.success) {
+        setUser(prev => ({ ...prev, coverImage: response.data.coverImage }));
+        setCoverFile(null);
+        setCoverPreview(null);
+        alert('✅ Cover image updated successfully!');
+      }
+    } catch (error) {
+      console.error('Cover update error:', error);
+      alert(error?.message || 'Failed to update cover image');
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwordData.current || !passwordData.new) {
+      alert('Please fill all password fields');
+      return;
+    }
     if (passwordData.new !== passwordData.confirm) {
       alert('❌ Passwords do not match!');
       return;
@@ -79,9 +182,20 @@ function Settings() {
       alert('❌ Password must be at least 6 characters!');
       return;
     }
-    alert('✅ Password changed successfully!');
-    setShowPasswordModal(false);
-    setPasswordData({ current: '', new: '', confirm: '' });
+
+    try {
+      const response = await API.changeCurrentPassword(passwordData.current, passwordData.new);
+      if (response?.success) {
+        alert('✅ Password changed successfully!');
+        setShowPasswordModal(false);
+        setPasswordData({ current: '', new: '', confirm: '' });
+      } else {
+        alert(response?.message || 'Failed to change password');
+      }
+    } catch (error) {
+      console.error('Change password error:', error);
+      alert(error?.message || 'Old password is incorrect');
+    }
   };
 
   const handleSaveSettings = () => {
@@ -120,7 +234,60 @@ function Settings() {
       component: (
         <div className="settings-section">
           <h2 className="settings-section-title"><i className="fas fa-user"></i> Account Settings</h2>
+
           <div className="settings-form">
+            {/* ---- Avatar upload (real backend) ---- */}
+            <div className="form-group">
+              <label>Profile Picture</label>
+              <div className="settings-avatar-row">
+                <img
+                  className="settings-avatar-preview"
+                  src={avatarPreview || user?.avatar || 'https://randomuser.me/api/portraits/men/32.jpg'}
+                  alt="avatar"
+                />
+                <div className="settings-avatar-controls">
+                  <label className="settings-file-btn">
+                    <i className="fas fa-image"></i> Choose Image
+                    <input type="file" accept="image/*" hidden onChange={handleAvatarChange} />
+                  </label>
+                  <button
+                    className="settings-btn save-btn"
+                    disabled={!avatarFile}
+                    onClick={handleUploadAvatar}
+                  >
+                    <i className="fas fa-upload"></i> Upload Avatar
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* ---- Cover image upload (real backend) ---- */}
+            <div className="form-group">
+              <label>Cover Image</label>
+              <div className="settings-cover-row">
+                {(coverPreview || user?.coverImage) && (
+                  <img
+                    className="settings-cover-preview"
+                    src={coverPreview || user?.coverImage}
+                    alt="cover"
+                  />
+                )}
+                <div className="settings-avatar-controls">
+                  <label className="settings-file-btn">
+                    <i className="fas fa-image"></i> Choose Image
+                    <input type="file" accept="image/*" hidden onChange={handleCoverChange} />
+                  </label>
+                  <button
+                    className="settings-btn save-btn"
+                    disabled={!coverFile}
+                    onClick={handleUploadCover}
+                  >
+                    <i className="fas fa-upload"></i> Upload Cover
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div className="form-group">
               <label>Full Name</label>
               <input
@@ -372,7 +539,7 @@ function Settings() {
     <div className="settings-container">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="main-wrapper">
-        <Navbar 
+        <Navbar
           user={user}
           onMenuClick={toggleSidebar}
           searchQuery=""

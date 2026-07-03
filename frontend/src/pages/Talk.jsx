@@ -154,7 +154,7 @@ function Talk() {
 
   const handleLike = async (tweetId) => {
     try {
-      const response = await API.likeTweet(tweetId);
+      const response = await API.toggleTweetLike(tweetId);
       if (response?.success) {
         await fetchTweets();
       } else {

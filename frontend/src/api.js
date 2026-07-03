@@ -266,36 +266,78 @@ const API = {
     return await this._request(`/subscriptions/u/${subscriberId}`, 'GET', null, false);
   },
 
+  // ---- More like functions ----
+
+  async toggleCommentLike(commentId) {
+    if (!commentId) throw { message: 'Comment ID is required' };
+    return await this._request(`/likes/toggle/c/${commentId}`, 'POST', null, true);
+  },
+
+  async toggleTweetLike(tweetId) {
+    if (!tweetId) throw { message: 'Tweet ID is required' };
+    return await this._request(`/likes/toggle/t/${tweetId}`, 'POST', null, true);
+  },
+
+  async getLikedVideos() {
+    return await this._request(`/likes/videos`, 'GET', null, true);
+  },
+
   // ---- Tweet functions ----
-  // Backend routes (tweet.routes.js) are all protected by varifyJWt,
-  // so every call here needs requiresAuth = true.
+  // NOTE: backend's createTweet ignores any "parentId" sent for replies -
+  // replies will save as normal top-level tweets, not nested ones, until
+  // the backend Tweet model/controller is updated to support parentId.
 
   async getTweets() {
-    // GET /tweets  -> getAlltweets controller
-    return await this._request('/tweets', 'GET', null, true);
+    return await this._request(`/tweets`, 'GET', null, true);
   },
 
   async getUserTweets(userId) {
-    // GET /tweets/user/:userId -> getUserTweets controller
     return await this._request(`/tweets/user/${userId}`, 'GET', null, true);
   },
 
-  async createTweet(tweetData) {
-    // POST /tweets -> createTweet controller (body: { content })
-    const content = typeof tweetData === 'string' ? tweetData : tweetData?.content;
-    return await this._request('/tweets', 'POST', { content }, true);
+  async createTweet({ content, parentId } = {}) {
+    if (!content?.trim()) throw { message: 'Tweet content is required' };
+    return await this._request(`/tweets`, 'POST', { content, parentId }, true);
   },
 
   async updateTweet(tweetId, content) {
-    // PATCH /tweets/:tweetId -> updateTweet controller (body: { content })
     if (!tweetId) throw { message: 'Tweet ID is required' };
     return await this._request(`/tweets/${tweetId}`, 'PATCH', { content }, true);
   },
 
   async deleteTweet(tweetId) {
-    // DELETE /tweets/:tweetId -> deleteTweet controller
     if (!tweetId) throw { message: 'Tweet ID is required' };
     return await this._request(`/tweets/${tweetId}`, 'DELETE', null, true);
+  },
+
+  // ---- Playlist functions ----
+
+  async createPlaylist(name, description) {
+    return await this._request(`/playlists`, 'POST', { name, description }, true);
+  },
+
+  async getUserPlaylists(userId) {
+    return await this._request(`/playlists/user/${userId}`, 'GET', null, true);
+  },
+
+  async getPlaylistById(playlistId) {
+    return await this._request(`/playlists/${playlistId}`, 'GET', null, true);
+  },
+
+  async updatePlaylist(playlistId, name, description) {
+    return await this._request(`/playlists/${playlistId}`, 'PATCH', { name, description }, true);
+  },
+
+  async deletePlaylist(playlistId) {
+    return await this._request(`/playlists/${playlistId}`, 'DELETE', null, true);
+  },
+
+  async addVideoToPlaylist(videoId, playlistId) {
+    return await this._request(`/playlists/add/${videoId}/${playlistId}`, 'PATCH', null, true);
+  },
+
+  async removeVideoFromPlaylist(videoId, playlistId) {
+    return await this._request(`/playlists/remove/${videoId}/${playlistId}`, 'PATCH', null, true);
   },
 
   _getMockVideos() {
